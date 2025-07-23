@@ -1,3 +1,5 @@
+Created & Owned By: 👑Mohammed Qizar Bilal
+
 # 🛒 Multi-Vendor Marketplace
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
@@ -358,4 +360,4 @@ For support and questions:
 
 ---
 
-Built with ❤️ using Next.js and modern web technologies.
+Built by 👑Mohammed Qizar Bilal with ❤ using Next.js and modern web technologies.
