@@ -10,10 +10,6 @@ A comprehensive, production-ready multi-vendor marketplace built with Next.js, P
 
 ![Multi-Vendor Marketplace](https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=600&fit=crop&auto=format)
 
-## ✨ Live Demo
-
-🔗 **[View Live Demo](YOUR_DEPLOYMENT_URL)**
-
 ## 🚀 Features
 
 ### Customer Features
