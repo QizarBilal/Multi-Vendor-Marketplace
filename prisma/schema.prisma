@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  VENDOR
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  password      String?
+  role          UserRole  @default(CUSTOMER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  vendorProfile VendorProfile?
+  orders        Order[]
+  reviews       Review[]
+  cartItems     CartItem[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model VendorProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  shopName        String
+  description     String?
+  logo            String?
+  stripeAccountId String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@map("vendor_profiles")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  image       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  images      String[]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  vendorId   String
+  categoryId String
+
+  // Relations
+  vendor     VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category   Category      @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  reviews    Review[]
+  cartItems  CartItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  total         Decimal       @db.Decimal(10, 2)
+  status        OrderStatus   @default(PENDING)
+  shippingName  String
+  shippingEmail String
+  shippingPhone String?
+  shippingAddress String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Foreign Keys
+  customerId String
+
+  // Relations
+  customer   User        @relation(fields: [customerId], references: [id])
+  orderItems OrderItem[]
+  payment    Payment?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  quantity Int
+  price    Decimal @db.Decimal(10, 2)
+
+  // Foreign Keys
+  orderId   String
+  productId String
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  stripePaymentId   String        @unique
+  amount            Decimal       @db.Decimal(10, 2)
+  status            PaymentStatus @default(PENDING)
+  platformFee       Decimal       @db.Decimal(10, 2)
+  vendorAmount      Decimal       @db.Decimal(10, 2)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Foreign Keys
+  orderId String @unique
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @db.SmallInt
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign Keys
+  customerId String
+  productId  String
+
+  // Relations
+  customer User    @relation(fields: [customerId], references: [id])
+  product  Product @relation(fields: [productId], references: [id])
+
+  @@unique([customerId, productId])
+  @@map("reviews")
+}
+
+model CartItem {
+  id       String @id @default(cuid())
+  quantity Int
+
+  // Foreign Keys
+  userId    String
+  productId String
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
